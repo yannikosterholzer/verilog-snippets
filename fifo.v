@@ -1,3 +1,4 @@
+//synchronous fifo
 module fifo #(parameter abits = 4, dbits = 3)
              ( clk, rst, wr, rd, din, dout, empty, full);
     input  clk, rst, wr, rd;
