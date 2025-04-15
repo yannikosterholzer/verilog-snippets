@@ -26,7 +26,6 @@ module pip_skidbuff #( parameter DWIDTH=8)
     // Verwaltung von Daten und Valid-Signalen
     always @(posedge clk)
         if(!rstn) begin
-            downstream_data  <= 0;
             downstream_valid   <= 0;
             data_buffer <= 0;
             valid_buffer  <= 0;
