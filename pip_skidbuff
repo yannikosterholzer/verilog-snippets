@@ -30,24 +30,27 @@ module pip_skidbuff #( parameter DWIDTH=8)
             data_buffer <= 0;
             valid_buffer  <= 0;
         // State = FLUSS
-        end else if(ready) begin
-            // Lade Data & Valid - output mit Werten aus den Puffern  
-            if(!prev_ready) begin
-                downstream_data    <= data_buffer;
-                downstream_valid   <= valid_buffer;
-            // Lade Data & Valid - output mit den Eingangswerten
-            end else begin
-                downstream_data    <= upstream_data;
-                downstream_valid   <= valid;
-            end
-        // State = STAU
         end else begin
+         if(ready) begin
+                // Lade Data & Valid - output mit Werten aus den Puffern  
+                if(!prev_ready) begin
+                    downstream_data    <= data_buffer;
+                    downstream_valid   <= valid_buffer;
+                // Lade Data & Valid - output mit den Eingangswerten
+                end else begin
+                    downstream_data    <= upstream_data;
+                    downstream_valid   <= valid;
+                end
+            // State = STAU
+         end else begin
             // Lade Puffer  mit den Eingangswerten
             if(valid) begin
                 data_buffer   <= upstream_data;
                 valid_buffer  <= valid;
             end        
+         end
         end
+        
     // Ready-Signal für vorgelagerte Stufe und modulinterne Steuersignale
     always @(posedge clk)
         if(!rstn)
