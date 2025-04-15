@@ -1,0 +1,59 @@
+// Skid-Buffer-Logik für Pipelines
+
+module pip_skidbuff #( parameter DWIDTH=8)
+                    (
+                        input  clk,
+                        input  rstn,                        
+                        // upstream input & output
+                        input  [DWIDTH-1:0] upstream_data,
+                        input  upstream_valid, // valid-signal der stufe n-1 verundet mit stufeninternen validsignal 
+                        output reg upstream_ready,
+                        
+                        // downstream input & output 
+                        input  downstream_ready, // ready-signal der stufe n+1 verundet mit stufeninternen readysignal
+                        output reg downstream_valid,
+                        output reg [DWIDTH-1:0] downstream_data
+                    );
+
+    reg  [DWIDTH-1:0] data_buffer;
+    reg  valid_buffer;
+
+    wire valid = upstream_valid;
+    wire ready = downstream_ready;
+    wire prev_ready = upstream_ready; 
+
+   
+    // Verwaltung von Daten und Valid-Signalen
+    always @(posedge clk)
+        if(!rstn) begin
+            downstream_data  <= 0;
+            downstream_valid   <= 0;
+            data_buffer <= 0;
+            valid_buffer  <= 0;
+        // State = FLUSS
+        end else if(ready) begin
+            // Lade Data & Valid - output mit Werten aus den Puffern  
+            if(!prev_ready) begin
+                downstream_data    <= data_buffer;
+                downstream_valid   <= valid_buffer;
+            // Lade Data & Valid - output mit den Eingangswerten
+            end else begin
+                downstream_data    <= upstream_data;
+                downstream_valid   <= valid;
+            end
+        // State = STAU
+        end else begin
+            // Lade Puffer  mit den Eingangswerten
+            if(valid) begin
+                data_buffer   <= upstream_data;
+                valid_buffer  <= valid;
+            end        
+        end
+    // Ready-Signal für vorgelagerte Stufe und modulinterne Steuersignale
+    always @(posedge clk)
+        if(!rstn)
+            upstream_ready    <= 1;
+        else
+            upstream_ready    <= ready; 
+
+endmodule
