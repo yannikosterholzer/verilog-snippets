@@ -18,10 +18,6 @@ module pip_skidbuff #( parameter DWIDTH=8)
     reg  [DWIDTH-1:0] data_buffer;
     reg  valid_buffer;
 
-    wire valid = upstream_valid;
-    wire ready = downstream_ready;
-    wire prev_ready = upstream_ready; 
-
    
     // Verwaltung von Daten und Valid-Signalen
     always @(posedge clk)
@@ -31,22 +27,24 @@ module pip_skidbuff #( parameter DWIDTH=8)
             valid_buffer  <= 0;
         // State = FLUSS
         end else begin
-         if(ready) begin
+         if(downstream_ready) begin
                 // Lade Data & Valid - output mit Werten aus den Puffern  
-                if(!prev_ready) begin
+                if(!upstream_ready) begin
                     downstream_data    <= data_buffer;
                     downstream_valid   <= valid_buffer;
+                    // leere Puffer
+                    valid_buffer       <= 0;
                 // Lade Data & Valid - output mit den Eingangswerten
                 end else begin
                     downstream_data    <= upstream_data;
-                    downstream_valid   <= valid;
+                    downstream_valid   <= upstream_valid;
                 end
             // State = STAU
          end else begin
             // Lade Puffer  mit den Eingangswerten
-            if(valid) begin
+            if(!valid_buffer && upstream_valid) begin
                 data_buffer   <= upstream_data;
-                valid_buffer  <= valid;
+                valid_buffer  <= upstream_valid;
             end        
          end
         end
@@ -56,6 +54,6 @@ module pip_skidbuff #( parameter DWIDTH=8)
         if(!rstn)
             upstream_ready    <= 1;
         else
-            upstream_ready    <= ready; 
+            upstream_ready    <= downstream_ready; 
 
 endmodule
