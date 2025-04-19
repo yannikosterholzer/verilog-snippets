@@ -1,0 +1,103 @@
+`timescale 1ns / 1ps
+
+module tb_pipeline;
+
+    reg         clk;
+    reg         rstn;
+
+    reg  [7:0]  upstream_data0;
+    reg         upstream_valid0;
+    wire        upstream_ready0;
+
+    reg         i_ready0;
+    reg         i_ready1;
+    reg         i_ready2;
+    reg         i_ready3;
+
+    wire [7:0]  downstream_data3;
+    wire        downstream_valid3;
+
+
+    initial clk = 0;
+    always #5 clk = ~clk; // 100 MHz
+
+    //Skidbuffer-Pipeline Instantiation
+    pipeline uut (
+        .clk(clk),
+        .rstn(rstn),
+        .upstream_data0(upstream_data0),
+        .upstream_valid0(upstream_valid0),
+        .upstream_ready0(upstream_ready0),
+        .i_ready0(i_ready0),
+        .i_ready1(i_ready1),
+        .i_ready2(i_ready2),
+        .i_ready3(i_ready3),
+        .downstream_data3(downstream_data3),
+        .downstream_valid3(downstream_valid3)
+    );
+
+    // Stimuli
+    initial begin
+        // Initialwerte
+        upstream_data0   = 8'h00;
+        upstream_valid0  = 1'b0;
+        i_ready0         = 1'b1;
+        i_ready1         = 1'b1;
+        i_ready2         = 1'b1;
+        i_ready3         = 1'b1;
+
+        rstn             = 1'b0;
+        repeat (3) @(posedge clk);
+        rstn             = 1'b1;
+
+        // Einspeisen von Daten in die Pipeline
+        wait (upstream_ready0 == 1);
+        #1;
+        upstream_data0  = 8'hAA;
+        upstream_valid0 = 1;
+        @(posedge clk);
+
+        wait (upstream_ready0 == 1);
+        #1;
+        upstream_data0  = 8'hBB;
+        upstream_valid0 = 1;
+        @(posedge clk);
+
+
+        // Einspeisung 0xCC und gleichzeitig in der letzten Stufe einen Stall erzeugen
+        wait (upstream_ready0 == 1);
+        #1;
+        upstream_data0  = 8'hCC;
+        upstream_valid0 = 1;
+        i_ready3        = 0;
+        @(posedge clk);
+
+        wait (upstream_ready0 == 1);
+        #1;
+        upstream_data0  = 8'hDD;
+        upstream_valid0 = 1;
+        @(posedge clk);
+
+
+        // Einspeisung 0xEE und Stall aufheben
+        wait (upstream_ready0 == 1);
+        #1;
+        upstream_data0  = 8'hEE;
+        upstream_valid0 = 1;
+        i_ready3        = 1;
+        @(posedge clk);
+ 
+
+        wait (upstream_ready0 == 1);
+        #1;
+        upstream_data0  = 8'hFF;
+
+        upstream_valid0 = 1;
+        @(posedge clk);
+
+        repeat (20) @(posedge clk);
+        $finish;
+    end
+
+
+endmodule
